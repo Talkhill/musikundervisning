@@ -26,7 +26,6 @@
     overflow-x: hidden;
   }
 
-  /* grain overlay */
   body::after {
     content: '';
     position: fixed;
@@ -39,7 +38,6 @@
     background-size: 180px;
   }
 
-  /* ---- HEADER ---- */
   header {
     padding: 3.5rem 3rem 2.5rem;
     border-bottom: 2px solid var(--ink);
@@ -94,7 +92,6 @@
     animation: fadeIn 0.5s ease forwards 0.35s;
   }
 
-  /* ---- MAIN ---- */
   main {
     max-width: 1100px;
     margin: 0 auto;
@@ -140,6 +137,7 @@
   .card:nth-child(4) { animation-delay: 0.65s; }
   .card:nth-child(5) { animation-delay: 0.7s; }
   .card:nth-child(6) { animation-delay: 0.75s; }
+  .card:nth-child(7) { animation-delay: 0.8s; }
 
   .card.available:hover {
     background: var(--ink);
@@ -189,7 +187,6 @@
     line-height: 1;
   }
 
-  /* ---- FOOTER ---- */
   footer {
     border-top: 1.5px solid var(--ink);
     padding: 1.4rem 3rem;
@@ -227,7 +224,7 @@
 </header>
 
 <main>
-  <p class="grid-label">Indhold — 6 sektioner</p>
+  <p class="grid-label">Indhold — 7 sektioner</p>
   <div class="grid">
 
     <a href="klaver/index.html" class="card available">
@@ -239,8 +236,17 @@
       </div>
     </a>
 
-    <a href="akkordlaere/index.html" class="card soon">
+    <a href="akkord-generator/index.html" class="card available">
       <span class="card-num">02</span>
+      <div class="card-title">Akkord generator</div>
+      <div class="card-footer">
+        <span class="card-status status-live">Tilgængelig</span>
+        <span class="card-arrow">↗</span>
+      </div>
+    </a>
+
+    <a href="akkordlaere/index.html" class="card soon">
+      <span class="card-num">03</span>
       <div class="card-title">Akkordlære</div>
       <div class="card-footer">
         <span class="card-status status-soon">Kommer snart</span>
@@ -248,7 +254,7 @@
     </a>
 
     <a href="nodevaerktoej/index.html" class="card soon">
-      <span class="card-num">03</span>
+      <span class="card-num">04</span>
       <div class="card-title">Nodeværktøjer</div>
       <div class="card-footer">
         <span class="card-status status-soon">Kommer snart</span>
@@ -256,7 +262,7 @@
     </a>
 
     <a href="rytme/index.html" class="card soon">
-      <span class="card-num">04</span>
+      <span class="card-num">05</span>
       <div class="card-title">Rytme &amp; trommer</div>
       <div class="card-footer">
         <span class="card-status status-soon">Kommer snart</span>
@@ -264,7 +270,7 @@
     </a>
 
     <a href="teori/index.html" class="card soon">
-      <span class="card-num">05</span>
+      <span class="card-num">06</span>
       <div class="card-title">Teori &amp; opgaver</div>
       <div class="card-footer">
         <span class="card-status status-soon">Kommer snart</span>
@@ -272,7 +278,7 @@
     </a>
 
     <a href="links/index.html" class="card soon">
-      <span class="card-num">06</span>
+      <span class="card-num">07</span>
       <div class="card-title">Links &amp; resurser</div>
       <div class="card-footer">
         <span class="card-status status-soon">Kommer snart</span>
