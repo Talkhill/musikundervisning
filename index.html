@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thorkils Musikundervisning</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inconsolata:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --paper: #f0ebe0;
+    --ink: #181410;
+    --ink2: #5a5248;
+    --ink3: #9a9088;
+    --red: #c0321a;
+    --line: rgba(24,20,16,0.15);
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inconsolata', monospace;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* grain overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.045;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 180px;
+  }
+
+  /* ---- HEADER ---- */
+  header {
+    padding: 3.5rem 3rem 2.5rem;
+    border-bottom: 2px solid var(--ink);
+    position: relative;
+  }
+
+  .stamp {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--paper);
+    background: var(--red);
+    padding: 3px 10px 2px;
+    margin-bottom: 1.4rem;
+    opacity: 0;
+    animation: fadeIn 0.4s ease forwards 0.1s;
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3.8rem, 10vw, 7.5rem);
+    letter-spacing: 0.02em;
+    line-height: 0.92;
+    color: var(--ink);
+    opacity: 0;
+    animation: fadeIn 0.5s ease forwards 0.2s;
+  }
+
+  h1 .strike {
+    position: relative;
+    display: inline-block;
+  }
+  h1 .strike::after {
+    content: '';
+    position: absolute;
+    left: -2px; right: -2px;
+    top: 52%;
+    height: 3px;
+    background: var(--red);
+    transform: rotate(-1.5deg);
+  }
+
+  .header-sub {
+    margin-top: 1.4rem;
+    font-size: 0.78rem;
+    color: var(--ink2);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0;
+    animation: fadeIn 0.5s ease forwards 0.35s;
+  }
+
+  /* ---- MAIN ---- */
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 3rem 3rem 5rem;
+  }
+
+  .grid-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeIn 0.4s ease forwards 0.45s;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1.5px solid var(--ink);
+    border-left: 1.5px solid var(--ink);
+  }
+
+  .card {
+    border-right: 1.5px solid var(--ink);
+    border-bottom: 1.5px solid var(--ink);
+    padding: 1.8rem 1.6rem 1.5rem;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    position: relative;
+    transition: background 0.15s ease;
+    opacity: 0;
+    animation: fadeIn 0.4s ease forwards;
+    min-height: 170px;
+  }
+
+  .card:nth-child(1) { animation-delay: 0.5s; }
+  .card:nth-child(2) { animation-delay: 0.55s; }
+  .card:nth-child(3) { animation-delay: 0.6s; }
+  .card:nth-child(4) { animation-delay: 0.65s; }
+  .card:nth-child(5) { animation-delay: 0.7s; }
+  .card:nth-child(6) { animation-delay: 0.75s; }
+
+  .card.available:hover {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .card.available:hover .card-num,
+  .card.available:hover .card-status { color: var(--red); }
+  .card.available:hover .card-arrow { transform: translate(3px, -3px); }
+
+  .card-num {
+    font-size: 0.62rem;
+    letter-spacing: 0.15em;
+    color: var(--ink3);
+    transition: color 0.15s;
+  }
+
+  .card-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.9rem;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    margin-top: 0.2rem;
+    flex: 1;
+  }
+
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: auto;
+    padding-top: 1rem;
+  }
+
+  .card-status {
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    transition: color 0.15s;
+  }
+  .status-live { color: var(--red); font-weight: 500; }
+  .status-soon { color: var(--ink3); }
+
+  .card-arrow {
+    font-size: 1rem;
+    color: var(--red);
+    transition: transform 0.15s ease;
+    line-height: 1;
+  }
+
+  /* ---- FOOTER ---- */
+  footer {
+    border-top: 1.5px solid var(--ink);
+    padding: 1.4rem 3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink3);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 720px) {
+    header { padding: 2.5rem 1.5rem 2rem; }
+    main { padding: 2rem 1.5rem 4rem; }
+    footer { padding: 1.2rem 1.5rem; flex-direction: column; gap: 0.4rem; }
+    .grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 480px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="stamp">Sydfyn</div>
+  <h1>Thorkils<br>Musik<span class="strike">under</span>visning</h1>
+  <p class="header-sub">Interaktive værktøjer og resurser til musikundervisning</p>
+</header>
+
+<main>
+  <p class="grid-label">Indhold — 6 sektioner</p>
+  <div class="grid">
+
+    <a href="klaver/index.html" class="card available">
+      <span class="card-num">01</span>
+      <div class="card-title">Interaktivt klaver</div>
+      <div class="card-footer">
+        <span class="card-status status-live">Tilgængelig</span>
+        <span class="card-arrow">↗</span>
+      </div>
+    </a>
+
+    <a href="akkordlaere/index.html" class="card soon">
+      <span class="card-num">02</span>
+      <div class="card-title">Akkordlære</div>
+      <div class="card-footer">
+        <span class="card-status status-soon">Kommer snart</span>
+      </div>
+    </a>
+
+    <a href="nodevaerktoej/index.html" class="card soon">
+      <span class="card-num">03</span>
+      <div class="card-title">Nodeværktøjer</div>
+      <div class="card-footer">
+        <span class="card-status status-soon">Kommer snart</span>
+      </div>
+    </a>
+
+    <a href="rytme/index.html" class="card soon">
+      <span class="card-num">04</span>
+      <div class="card-title">Rytme &amp; trommer</div>
+      <div class="card-footer">
+        <span class="card-status status-soon">Kommer snart</span>
+      </div>
+    </a>
+
+    <a href="teori/index.html" class="card soon">
+      <span class="card-num">05</span>
+      <div class="card-title">Teori &amp; opgaver</div>
+      <div class="card-footer">
+        <span class="card-status status-soon">Kommer snart</span>
+      </div>
+    </a>
+
+    <a href="links/index.html" class="card soon">
+      <span class="card-num">06</span>
+      <div class="card-title">Links &amp; resurser</div>
+      <div class="card-footer">
+        <span class="card-status status-soon">Kommer snart</span>
+      </div>
+    </a>
+
+  </div>
+</main>
+
+<footer>
+  <span>Thorkils Musikundervisning</span>
+  <span>Sydfyn · Danmark</span>
+</footer>
+
+</body>
+</html>
