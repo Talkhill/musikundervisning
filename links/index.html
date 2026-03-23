@@ -1,0 +1,1549 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Akkord Generator</title>
+
+<!-- Libraries loaded from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+
+<style>
+  :root {
+    --bg: #1a1a2e;
+    --surface: #16213e;
+    --surface2: #0f3460;
+    --accent: #e94560;
+    --accent2: #f5a623;
+    --text: #eaeaea;
+    --text-muted: #8892a4;
+    --border: #2a3a5c;
+    --green: #4ecca3;
+    --radius: 8px;
+    --font-ui: 'Segoe UI', system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-ui);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--accent);
+  }
+
+  header h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  header p {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-top: 4px;
+  }
+
+  .instrument-row {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 20px;
+    background: var(--surface);
+    padding: 14px 20px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    align-items: center;
+  }
+
+  .instrument-row label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  .instrument-row input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .form-row {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .form-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  label.field-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  input[type="text"], select, textarea {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 9px 12px;
+    border-radius: var(--radius);
+    font-family: var(--font-ui);
+    font-size: 0.95rem;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+
+  input[type="text"]:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  select option { background: var(--surface2); }
+
+  .sections-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 14px; }
+
+  .section-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+  }
+
+  .section-header {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .section-name-input {
+    font-weight: 700;
+    font-size: 0.95rem;
+    width: 160px;
+    color: var(--accent2) !important;
+  }
+
+  .section-chords {
+    width: 100%;
+    min-height: 60px;
+    resize: vertical;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .section-hint {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 18px;
+    border-radius: var(--radius);
+    border: none;
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all 0.18s;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+  .btn-primary:hover { background: #d63250; transform: translateY(-1px); }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { background: var(--border); }
+
+  .btn-green {
+    background: var(--green);
+    color: #0a0a1a;
+  }
+  .btn-green:hover { background: #3db890; }
+
+  .btn-amber {
+    background: var(--accent2);
+    color: #0a0a1a;
+  }
+  .btn-amber:hover { background: #d9921f; }
+
+  .btn-danger {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 4px 10px;
+    font-size: 0.78rem;
+  }
+  .btn-danger:hover { background: var(--accent); color: white; }
+
+  .btn-add-section {
+    width: 100%;
+    background: var(--surface);
+    border: 2px dashed var(--border);
+    color: var(--green);
+    padding: 10px;
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+  }
+  .btn-add-section:hover { border-color: var(--green); background: rgba(78,204,163,0.05); }
+
+  .preview-area {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-top: 20px;
+  }
+
+  .preview-area h3 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+
+  .preview-section { margin-bottom: 22px; }
+
+  .preview-section-name {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--accent2);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+
+  .preview-chord-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 14px;
+  }
+
+  .chord-diagram-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .chord-name-label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text);
+    text-align: center;
+  }
+
+  .chord-instruments {
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+  }
+
+  .chord-instrument-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .inst-label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+
+  .position-btn {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: var(--surface2);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    margin-top: 2px;
+  }
+  .position-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .chord-structure {
+    margin-top: 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.88rem;
+    color: var(--green);
+    line-height: 1.8;
+  }
+
+  .lyrics-section { margin-top: 14px; }
+
+  .search-download-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+    align-items: center;
+  }
+
+  .download-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .status-msg {
+    font-size: 0.8rem;
+    color: var(--green);
+    padding: 6px 12px;
+    background: rgba(78,204,163,0.1);
+    border-radius: var(--radius);
+    border: 1px solid rgba(78,204,163,0.3);
+    display: none;
+  }
+
+  hr.divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 18px 0;
+  }
+
+  svg.chord-svg { display: block; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎵 Akkord Generator</h1>
+  <p>Til musikundervisning — generer Word og PowerPoint med guitargreb, klaver og ukulele</p>
+</header>
+
+<!-- Instruments -->
+<div class="instrument-row">
+  <span style="font-weight:700;color:var(--text-muted);font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;">Instrumenter:</span>
+  <label><input type="checkbox" id="cbGuitar" checked onchange="renderPreview()"> 🎸 Guitar</label>
+  <label><input type="checkbox" id="cbPiano" onchange="renderPreview()"> 🎹 Klaver</label>
+  <label><input type="checkbox" id="cbUkulele" onchange="renderPreview()"> 🪗 Ukulele</label>
+</div>
+
+<!-- Song info -->
+<div class="form-grid">
+  <div class="form-group">
+    <label class="field-label">Sangtitel</label>
+    <input type="text" id="songTitle" placeholder="f.eks. Wonderwall" oninput="renderPreview()">
+  </div>
+  <div class="form-group">
+    <label class="field-label">Kunstner</label>
+    <input type="text" id="songArtist" placeholder="f.eks. Oasis" oninput="renderPreview()">
+  </div>
+</div>
+
+<div class="form-row">
+  <div class="form-group">
+    <label class="field-label">Tempo / noter</label>
+    <input type="text" id="songTempo" placeholder="f.eks. 87 BPM, capo 2" oninput="renderPreview()">
+  </div>
+  <div class="form-group" style="max-width:160px;">
+    <label class="field-label">Taktart</label>
+    <select id="songMeter" onchange="renderPreview()">
+      <option>4/4</option>
+      <option>3/4</option>
+      <option>6/8</option>
+      <option>2/4</option>
+      <option>12/8</option>
+      <option>5/4</option>
+      <option>7/8</option>
+    </select>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- Fixed sections (hardcoded in HTML) -->
+<div class="sections-container" id="sectionsContainer">
+
+  <!-- INTRO -->
+  <div class="section-block" data-section-id="s-intro">
+    <div class="section-header">
+      <input type="text" class="section-name-input" value="Intro" oninput="renderPreview()">
+      <span style="color:var(--text-muted);font-size:0.75rem;margin-left:auto;">Fast sektion</span>
+    </div>
+    <textarea class="section-chords" rows="2" placeholder="/Am /F /C /G" oninput="renderPreview()"></textarea>
+    <div class="section-hint">/ = taktskift &nbsp;|&nbsp; Enter = ny linje &nbsp;|&nbsp; * = barré &nbsp;|&nbsp; Eks: /Am /F /C /G</div>
+  </div>
+
+  <!-- VERS -->
+  <div class="section-block" data-section-id="s-vers">
+    <div class="section-header">
+      <input type="text" class="section-name-input" value="Vers" oninput="renderPreview()">
+      <span style="color:var(--text-muted);font-size:0.75rem;margin-left:auto;">Fast sektion</span>
+    </div>
+    <textarea class="section-chords" rows="2" placeholder="/Am /F /C /G" oninput="renderPreview()"></textarea>
+    <div class="section-hint">/ = taktskift &nbsp;|&nbsp; Enter = ny linje &nbsp;|&nbsp; * = barré &nbsp;|&nbsp; Eks: /Am /F /C /G</div>
+  </div>
+
+  <!-- OMKVÆD -->
+  <div class="section-block" data-section-id="s-omkvæd">
+    <div class="section-header">
+      <input type="text" class="section-name-input" value="Omkvæd" oninput="renderPreview()">
+      <span style="color:var(--text-muted);font-size:0.75rem;margin-left:auto;">Fast sektion</span>
+    </div>
+    <textarea class="section-chords" rows="2" placeholder="/C /G /Am /F" oninput="renderPreview()"></textarea>
+    <div class="section-hint">/ = taktskift &nbsp;|&nbsp; Enter = ny linje &nbsp;|&nbsp; * = barré &nbsp;|&nbsp; Eks: /Am /F /C /G</div>
+  </div>
+
+</div>
+
+<button class="btn btn-add-section" onclick="addSection()">+ Tilføj sektion</button>
+
+<!-- Preview -->
+<div class="preview-area">
+  <h3>👁 Forhåndsvisning</h3>
+  <div id="previewContent"><p style="color:var(--text-muted);font-size:0.85rem;">Indtast akkorder ovenfor for at se forhåndsvisning...</p></div>
+</div>
+
+<hr class="divider">
+
+<!-- Lyrics -->
+<div class="lyrics-section">
+  <label class="field-label" style="display:block;margin-bottom:6px;">Sangtekst (valgfri)</label>
+  <textarea id="songLyrics" rows="6" placeholder="Indsæt sangtekst her..."></textarea>
+  <div class="search-download-row">
+    <button class="btn btn-secondary" onclick="window.open('https://www.google.com/search?q=' + encodeURIComponent((document.getElementById('songArtist').value||'') + ' ' + (document.getElementById('songTitle').value||'') + ' chord chart'), '_blank')">🎸 Søg akkorder</button>
+    <button class="btn btn-secondary" onclick="window.open('https://www.google.com/search?q=' + encodeURIComponent((document.getElementById('songArtist').value||'') + ' ' + (document.getElementById('songTitle').value||'') + ' lyrics'), '_blank')">🔍 Søg tekst</button>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- Download buttons -->
+<div class="download-row">
+  <button class="btn btn-green" onclick="downloadWord()">📄 Download Word (.docx)</button>
+  <button class="btn btn-amber" onclick="downloadPptx()">📊 Download PowerPoint (.pptx)</button>
+</div>
+
+<div id="statusMsg" class="status-msg">✓ Fil genereret!</div>
+
+<script>
+// ============================================================
+// CHORD DATABASE
+// ============================================================
+let guitarDB = null;
+let ukuleleDB = null;
+
+async function loadDatabases() {
+  try {
+    const [gRes, uRes] = await Promise.all([
+      fetch('https://cdn.jsdelivr.net/npm/@tombatossals/chords-db@0.5.1/lib/guitar.json'),
+      fetch('https://cdn.jsdelivr.net/npm/@tombatossals/chords-db@0.5.1/lib/ukulele.json')
+    ]);
+    guitarDB = await gRes.json();
+    ukuleleDB = await uRes.json();
+    console.log('Databases loaded:', Object.keys(guitarDB.chords).length, 'guitar keys');
+    renderPreview();
+  } catch (e) {
+    console.warn('Could not load chord databases:', e);
+  }
+}
+
+// Map chord name to database key
+function toDbKey(chord) {
+  let c = chord.replace(/\*/g, '').trim();
+  const match = c.match(/^([A-Ga-g][#b]?)(.*)$/);
+  if (!match) return null;
+  let root = match[1].charAt(0).toUpperCase() + match[1].slice(1);
+  let rawSuffix = (match[2] || '').trim();
+
+  const rootMap = {
+    'C': 'C', 'C#': 'Csharp', 'Db': 'Db',
+    'D': 'D', 'D#': 'Eb', 'Eb': 'Eb',
+    'E': 'E', 'F': 'F', 'F#': 'Fsharp', 'Gb': 'Fsharp',
+    'G': 'G', 'G#': 'Ab', 'Ab': 'Ab',
+    'A': 'A', 'A#': 'Bb', 'Bb': 'Bb',
+    'B': 'B'
+  };
+
+  const dbRoot = rootMap[root];
+  if (!dbRoot) return null;
+
+  // tombatossals database suffix keys (verified against the actual JSON)
+  // Major chords use 'major', minor chords use 'minor'
+  const suffixMap = {
+    '':         'major',
+    'maj':      'major',
+    'major':    'major',
+    'M':        'major',
+    'm':        'minor',
+    'min':      'minor',
+    'minor':    'minor',
+    '-':        'minor',
+    '7':        '7',
+    'dom7':     '7',
+    'maj7':     'maj7',
+    'M7':       'maj7',
+    'Maj7':     'maj7',
+    'm7':       'm7',
+    'min7':     'm7',
+    '-7':       'm7',
+    'dim':      'dim',
+    'o':        'dim',
+    'dim7':     'dim7',
+    'o7':       'dim7',
+    'aug':      'aug',
+    '+':        'aug',
+    'sus2':     'sus2',
+    'sus4':     'sus4',
+    'sus':      'sus4',
+    '9':        '9',
+    'maj9':     'maj9',
+    'm9':       'm9',
+    'add9':     'add9',
+    'add2':     'add9',
+    '11':       '11',
+    '13':       '13',
+    '6':        '6',
+    'm6':       'm6',
+    '5':        '5',
+    'mmaj7':    'mmaj7',
+    'm/maj7':   'mmaj7',
+  };
+
+  const suffix = suffixMap.hasOwnProperty(rawSuffix) ? suffixMap[rawSuffix] : rawSuffix;
+  return { root: dbRoot, suffix };
+}
+
+function getChordPositions(chordName, db) {
+  if (!db) return [];
+  const key = toDbKey(chordName);
+  if (!key) return [];
+  const chords = db.chords[key.root];
+  if (!chords) return [];
+  const found = chords.find(c => c.suffix === key.suffix);
+  if (!found) return [];
+  return found.positions || [];
+}
+
+// ============================================================
+// CHORD POSITION TRACKING
+// ============================================================
+const positionState = {}; // key: `${inst}-${chordName}` => posIndex
+
+function getPosIndex(inst, chordName) {
+  const key = `${inst}-${chordName}`;
+  return positionState[key] || 0;
+}
+
+function setPosIndex(inst, chordName, idx) {
+  const key = `${inst}-${chordName}`;
+  positionState[key] = idx;
+  renderPreview();
+}
+
+// Klaver omvending
+const pianoInversionState = {}; // chordName => 0,1,2
+
+function getPianoInversion(chordName) {
+  return pianoInversionState[chordName] || 0;
+}
+
+function cyclePianoInversion(chordName) {
+  const { intervals } = getPianoNotes(chordName);
+  const noteCount = intervals.length || 3;
+  pianoInversionState[chordName] = ((pianoInversionState[chordName] || 0) + 1) % noteCount;
+  renderPreview();
+}
+
+// ============================================================
+// PARSE CHORDS FROM TEXT
+// ============================================================
+function parseChordsFromText(text) {
+  // Returns array of lines, each line is array of bar-arrays of chords
+  const lines = text.split('\n');
+  return lines.map(line => {
+    const parts = line.split('/').filter(p => p.trim());
+    return parts.map(p => p.trim().split(/\s+/).filter(Boolean));
+  });
+}
+
+function getUniqueChords(text) {
+  const all = [];
+  const lines = text.split('\n');
+  for (const line of lines) {
+    const parts = line.split('/').filter(p => p.trim());
+    for (const bar of parts) {
+      const chords = bar.trim().split(/\s+/).filter(Boolean);
+      for (const c of chords) {
+        const clean = c.replace(/\*/g, '');
+        if (clean && !all.includes(clean)) all.push(clean);
+      }
+    }
+  }
+  return all;
+}
+
+function getAllSectionChords() {
+  const allChords = [];
+  document.querySelectorAll('.section-chords').forEach(ta => {
+    getUniqueChords(ta.value).forEach(c => {
+      if (!allChords.includes(c)) allChords.push(c);
+    });
+  });
+  return allChords;
+}
+
+// ============================================================
+// SVG DIAGRAM GENERATORS
+// ============================================================
+
+// --- GUITAR / UKULELE SVG ---
+function drawStringedSVG(pos, numStrings, w, h) {
+  const frets = pos.frets;
+  const baseFret = pos.baseFret || 1;
+  const barres = pos.barres || [];
+  const fingers = pos.fingers || [];
+
+  const padL = 26, padR = 10, padT = 28, padB = 10;
+  const numFrets = 5;
+  const fretW = (w - padL - padR) / (numStrings - 1);
+  const fretH = (h - padT - padB) / numFrets;
+
+  let svg = `<svg class="chord-svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">`;
+
+  // NUT or fret number
+  if (baseFret === 1) {
+    svg += `<rect x="${padL}" y="${padT}" width="${(numStrings-1)*fretW}" height="4" fill="#eaeaea" rx="2"/>`;
+  } else {
+    svg += `<text x="${padL - 5}" y="${padT + fretH * 0.55}" text-anchor="end" font-size="7" fill="#8892a4">${baseFret}fr</text>`;
+  }
+
+  // Fret lines
+  for (let f = 0; f <= numFrets; f++) {
+    const y = padT + f * fretH;
+    svg += `<line x1="${padL}" y1="${y}" x2="${padL + (numStrings-1)*fretW}" y2="${y}" stroke="#2a3a5c" stroke-width="1"/>`;
+  }
+
+  // String lines
+  for (let s = 0; s < numStrings; s++) {
+    const x = padL + s * fretW;
+    svg += `<line x1="${x}" y1="${padT}" x2="${x}" y2="${padT + numFrets * fretH}" stroke="#8892a4" stroke-width="1.5"/>`;
+  }
+
+  // Barres
+  for (const barre of barres) {
+    const relFret = barre.fret;
+    const y = padT + (relFret - 0.5) * fretH;
+    let minStr = Infinity, maxStr = -Infinity;
+    frets.forEach((f, i) => {
+      if (f === relFret) { minStr = Math.min(minStr, i); maxStr = Math.max(maxStr, i); }
+    });
+    if (barre.fromString !== undefined) minStr = barre.fromString - 1;
+    if (barre.toString !== undefined) maxStr = numStrings - barre.toString;
+    const x1 = padL + minStr * fretW;
+    const x2 = padL + maxStr * fretW;
+    svg += `<rect x="${x1}" y="${y - 6}" width="${x2 - x1}" height="12" rx="6" fill="#e94560" opacity="0.9"/>`;
+  }
+
+  // Dots
+  frets.forEach((fret, si) => {
+    const x = padL + si * fretW;
+    if (fret === -1) {
+      svg += `<text x="${x}" y="${padT - 5}" text-anchor="middle" font-size="9" fill="#e94560" font-weight="bold">×</text>`;
+    } else if (fret === 0) {
+      svg += `<circle cx="${x}" cy="${padT - 7}" r="4" fill="none" stroke="#4ecca3" stroke-width="1.5"/>`;
+    } else {
+      const y = padT + (fret - 0.5) * fretH;
+      const inBarre = barres.some(b => b.fret === fret);
+      if (!inBarre) {
+        svg += `<circle cx="${x}" cy="${y}" r="6" fill="#e94560"/>`;
+        const fi = fingers[si];
+        if (fi) svg += `<text x="${x}" y="${y + 3.5}" text-anchor="middle" font-size="7" fill="white">${fi}</text>`;
+      }
+    }
+  });
+
+  svg += `</svg>`;
+  return svg;
+}
+
+// --- PIANO SVG ---
+// Returns intervals from root, as absolute semitones (root = first note)
+function getPianoNotes(chordName) {
+  const clean = chordName.replace(/\*/g, '').trim();
+  const match = clean.match(/^([A-Ga-g][#b]?)(.*)$/);
+  if (!match) return { root: 0, intervals: [] };
+
+  const rootName = match[1].charAt(0).toUpperCase() + match[1].slice(1);
+  const rawSuffix = (match[2] || '').trim().toLowerCase();
+
+  const noteMap = {'C':0,'C#':1,'Db':1,'D':2,'D#':3,'Eb':3,'E':4,'F':5,'F#':6,'Gb':6,'G':7,'G#':8,'Ab':8,'A':9,'A#':10,'Bb':10,'B':11};
+  const root = noteMap[rootName];
+  if (root === undefined) return { root: 0, intervals: [] };
+
+  let intervals = [];
+  const s = rawSuffix;
+  if (s === '' || s === 'maj' || s === 'major') intervals = [0, 4, 7];
+  else if (s === 'm' || s === 'min' || s === 'minor' || s === '-') intervals = [0, 3, 7];
+  else if (s === '7' || s === 'dom7') intervals = [0, 4, 7, 10];
+  else if (s === 'maj7') intervals = [0, 4, 7, 11];
+  else if (s === 'm7' || s === 'min7' || s === '-7') intervals = [0, 3, 7, 10];
+  else if (s === 'dim' || s === 'o') intervals = [0, 3, 6];
+  else if (s === 'dim7' || s === 'o7') intervals = [0, 3, 6, 9];
+  else if (s === 'aug' || s === '+') intervals = [0, 4, 8];
+  else if (s === 'sus2') intervals = [0, 2, 7];
+  else if (s === 'sus4' || s === 'sus') intervals = [0, 5, 7];
+  else if (s === '9') intervals = [0, 4, 7, 10, 14];
+  else if (s === 'maj9') intervals = [0, 4, 7, 11, 14];
+  else if (s === 'm9') intervals = [0, 3, 7, 10, 14];
+  else if (s === 'add9' || s === 'add2') intervals = [0, 4, 7, 14];
+  else if (s === '11') intervals = [0, 4, 7, 10, 14, 17];
+  else if (s === '6') intervals = [0, 4, 7, 9];
+  else if (s === 'm6') intervals = [0, 3, 7, 9];
+  else if (s === '5') intervals = [0, 7];
+  else intervals = [0, 4, 7];
+
+  return { root, intervals };
+}
+
+function applyInversion(intervals, inv) {
+  if (!intervals || intervals.length === 0) return intervals;
+  // Work with sorted intervals
+  let result = [...intervals].sort((a, b) => a - b);
+  for (let i = 0; i < inv; i++) {
+    // Move the lowest note up one octave
+    result[0] = result[0] + 12;
+    result.sort((a, b) => a - b);
+  }
+  return result;
+}
+
+function drawPianoSVG(chordName, inversion) {
+  const noteNames = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+  const { root, intervals } = getPianoNotes(chordName);
+  if (intervals.length === 0) {
+    return `<svg class="chord-svg" width="140" height="86" viewBox="0 0 140 86" xmlns="http://www.w3.org/2000/svg">
+      <rect width="140" height="86" fill="none" stroke="#2a3a5c" stroke-width="1" rx="4"/>
+      <text x="70" y="47" text-anchor="middle" font-size="11" fill="#8892a4">Ukendt akkord</text></svg>`;
+  }
+
+  // Apply inversion — result is sorted intervals (may span > 12 semitones)
+  const invIntervals = applyInversion(intervals, inversion);
+
+  // Convert intervals to absolute semitones from C0 reference
+  // Place root in octave 1 (semitone 12 = C1), so notes land in octave 1 or 2
+  // rootSemi: position of root within octave (0-11)
+  const rootSemi = root; // 0=C..11=B
+  // Offset so that root starts at semitone 12 (start of octave 1 in our display)
+  const absoluteNotes = invIntervals.map(i => rootSemi + i); 
+  // absoluteNotes are relative to C; values like 9 (A), 12 (C next oct), 16 (E next oct)
+  // We display two octaves: semitones 0..23 = C..B C..B
+  // Shift notes so the lowest falls in the first octave (0..11)
+  const minNote = Math.min(...absoluteNotes);
+  const octaveShift = Math.floor(minNote / 12) * 12;
+  const displayNotes = new Set(absoluteNotes.map(n => n - octaveShift));
+  // displayNotes are now in range 0..23 (two octaves)
+
+  // Layout: two full octaves side by side
+  const wW = 14, wH = 62, bW = 9, bH = 38;
+  // White keys per octave: C D E F G A B = 7 keys
+  // Two octaves = 14 white keys
+  const numOctaves = 2;
+  const totalW = numOctaves * 7 * wW + 3;
+  const totalH = wH + 16;
+
+  // Build white key list for two octaves (semitone 0..23)
+  // White key semitones within one octave: 0,2,4,5,7,9,11
+  const whiteInOct = [0,2,4,5,7,9,11];
+  const allWhites = []; // {semi (0-23), xi}
+  for (let oct = 0; oct < numOctaves; oct++) {
+    whiteInOct.forEach((s, wi) => {
+      allWhites.push({ semi: oct * 12 + s, xi: oct * 7 + wi });
+    });
+  }
+
+  // Black key defs per octave
+  const blackInOct = [
+    { semi: 1,  leftWi: 0 }, // C#
+    { semi: 3,  leftWi: 1 }, // D#
+    { semi: 6,  leftWi: 3 }, // F#
+    { semi: 8,  leftWi: 4 }, // G#
+    { semi: 10, leftWi: 5 }, // A#
+  ];
+
+  let svg = `<svg class="chord-svg" width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}" xmlns="http://www.w3.org/2000/svg">`;
+
+  // Octave divider label
+  svg += `<text x="${7 * wW + 1}" y="${totalH - 2}" text-anchor="middle" font-size="7" fill="#8892a4">|</text>`;
+
+  // White keys
+  for (const { semi, xi } of allWhites) {
+    const active = displayNotes.has(semi);
+    const x = xi * wW + 1;
+    svg += `<rect x="${x}" y="1" width="${wW-1}" height="${wH}" fill="${active ? '#e94560' : 'white'}" stroke="#2a3a5c" stroke-width="1" rx="2"/>`;
+    if (active) {
+      const name = noteNames[semi % 12];
+      svg += `<text x="${x + (wW-1)/2}" y="${wH - 4}" text-anchor="middle" font-size="8" fill="white" font-weight="bold">${name}</text>`;
+    }
+  }
+
+  // Black keys
+  for (let oct = 0; oct < numOctaves; oct++) {
+    for (const { semi: s, leftWi } of blackInOct) {
+      const semi = oct * 12 + s;
+      const active = displayNotes.has(semi);
+      const xi = oct * 7 + leftWi;
+      const x = xi * wW + wW - bW / 2 + 1;
+      svg += `<rect x="${x}" y="1" width="${bW}" height="${bH}" fill="${active ? '#e94560' : '#1a1a2e'}" stroke="#0a0a14" stroke-width="1" rx="2"/>`;
+      if (active) {
+        const name = noteNames[semi % 12];
+        svg += `<text x="${x + bW/2}" y="${bH - 3}" text-anchor="middle" font-size="7" fill="white" font-weight="bold">${name}</text>`;
+      }
+    }
+  }
+
+  // Octave boundary line
+  const divX = 7 * wW + 1;
+  svg += `<line x1="${divX}" y1="1" x2="${divX}" y2="${wH+1}" stroke="#4ecca3" stroke-width="1.5" stroke-dasharray="3,2"/>`;
+
+  svg += `</svg>`;
+  return svg;
+}
+
+// ============================================================
+// SECTION MANAGEMENT
+// ============================================================
+let sectionCounter = 10;
+
+function addSection() {
+  sectionCounter++;
+  const id = `s-dyn-${sectionCounter}`;
+  const div = document.createElement('div');
+  div.className = 'section-block';
+  div.dataset.sectionId = id;
+  div.innerHTML = `
+    <div class="section-header">
+      <input type="text" class="section-name-input" value="Ny sektion" oninput="renderPreview()">
+      <button class="btn btn-danger" onclick="this.closest('.section-block').remove();renderPreview()">✕ Fjern</button>
+    </div>
+    <textarea class="section-chords" rows="2" placeholder="/Am /F /C /G" oninput="renderPreview()"></textarea>
+    <div class="section-hint">/ = taktskift &nbsp;|&nbsp; Enter = ny linje &nbsp;|&nbsp; * = barré &nbsp;|&nbsp; Eks: /Am /F /C /G</div>
+  `;
+  document.getElementById('sectionsContainer').appendChild(div);
+  div.querySelector('.section-name-input').focus();
+  renderPreview();
+}
+
+// ============================================================
+// RENDER PREVIEW
+// ============================================================
+function renderPreview() {
+  const guitar = document.getElementById('cbGuitar').checked;
+  const piano = document.getElementById('cbPiano').checked;
+  const ukulele = document.getElementById('cbUkulele').checked;
+
+  const container = document.getElementById('previewContent');
+  container.innerHTML = '';
+
+  const allChords = getAllSectionChords();
+  if (allChords.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;">Indtast akkorder ovenfor for at se forhåndsvisning...</p>';
+    return;
+  }
+
+  const instList = [];
+  if (guitar) instList.push('guitar');
+  if (piano) instList.push('piano');
+  if (ukulele) instList.push('ukulele');
+  const instLabel = { guitar: '🎸 Guitar', piano: '🎹 Klaver', ukulele: '🪗 Ukulele' };
+
+  // One block per instrument — each block has a row of all chord diagrams
+  for (const inst of instList) {
+    const instBlock = document.createElement('div');
+    instBlock.style.cssText = 'margin-bottom:22px;';
+
+    const header = document.createElement('div');
+    header.style.cssText = 'font-size:0.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid var(--border);';
+    header.textContent = instLabel[inst];
+    instBlock.appendChild(header);
+
+    const diagRow = document.createElement('div');
+    diagRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start;';
+
+    for (const chord of allChords) {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:4px;';
+
+      const nameLabel = document.createElement('div');
+      nameLabel.style.cssText = 'font-size:0.82rem;font-weight:700;color:var(--text);text-align:center;';
+      nameLabel.textContent = chord;
+      wrap.appendChild(nameLabel);
+
+      if (inst === 'guitar') {
+        const positions = getChordPositions(chord, guitarDB);
+        const posIdx = getPosIndex('g', chord);
+        const safeIdx = positions.length > 0 ? Math.min(posIdx, positions.length - 1) : 0;
+        if (positions.length > 0) {
+          const svgDiv = document.createElement('div');
+          svgDiv.innerHTML = drawStringedSVG(positions[safeIdx], 6, 72, 104);
+          wrap.appendChild(svgDiv.firstChild);
+          if (positions.length > 1) {
+            const pb = document.createElement('button');
+            pb.className = 'position-btn';
+            pb.textContent = `Pos ${safeIdx + 1}/${positions.length}`;
+            pb.onclick = () => setPosIndex('g', chord, (safeIdx + 1) % positions.length);
+            wrap.appendChild(pb);
+          }
+        } else {
+          wrap.innerHTML += `<div style="width:72px;height:104px;display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:var(--text-muted);text-align:center;border:1px dashed var(--border);border-radius:4px;">ikke<br>fundet</div>`;
+        }
+
+      } else if (inst === 'piano') {
+        const inv = getPianoInversion(chord);
+        const svgDiv = document.createElement('div');
+        svgDiv.innerHTML = drawPianoSVG(chord, inv);
+        wrap.appendChild(svgDiv.firstChild);
+        const { intervals } = getPianoNotes(chord);
+        if (intervals.length > 0) {
+          const invNames = ['Grundstilling', '1. omvending', '2. omvending', '3. omvending'];
+          const pb = document.createElement('button');
+          pb.className = 'position-btn';
+          pb.textContent = invNames[inv] || `${inv}. omvending`;
+          pb.onclick = () => cyclePianoInversion(chord);
+          wrap.appendChild(pb);
+        }
+
+      } else if (inst === 'ukulele') {
+        const positions = getChordPositions(chord, ukuleleDB);
+        const posIdx = getPosIndex('u', chord);
+        const safeIdx = positions.length > 0 ? Math.min(posIdx, positions.length - 1) : 0;
+        if (positions.length > 0) {
+          const svgDiv = document.createElement('div');
+          svgDiv.innerHTML = drawStringedSVG(positions[safeIdx], 4, 58, 104);
+          wrap.appendChild(svgDiv.firstChild);
+          if (positions.length > 1) {
+            const pb = document.createElement('button');
+            pb.className = 'position-btn';
+            pb.textContent = `Pos ${safeIdx + 1}/${positions.length}`;
+            pb.onclick = () => setPosIndex('u', chord, (safeIdx + 1) % positions.length);
+            wrap.appendChild(pb);
+          }
+        } else {
+          wrap.innerHTML += `<div style="width:58px;height:104px;display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:var(--text-muted);text-align:center;border:1px dashed var(--border);border-radius:4px;">ikke<br>fundet</div>`;
+        }
+      }
+
+      diagRow.appendChild(wrap);
+    }
+
+    instBlock.appendChild(diagRow);
+    container.appendChild(instBlock);
+  }
+
+  // Chord structure per section
+  const structDiv = document.createElement('div');
+  structDiv.style.cssText = 'margin-top:8px;';
+  const structHeader = document.createElement('div');
+  structHeader.style.cssText = 'font-size:0.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid var(--border);';
+  structHeader.textContent = '📋 Akkordstruktur';
+  structDiv.appendChild(structHeader);
+
+  document.querySelectorAll('.section-block').forEach(block => {
+    const name = block.querySelector('.section-name-input').value;
+    const text = block.querySelector('.section-chords').value.trim();
+    if (!text) return;
+    const sDiv = document.createElement('div');
+    sDiv.style.marginBottom = '12px';
+    const nameEl = document.createElement('div');
+    nameEl.style.cssText = 'font-size:0.8rem;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;';
+    nameEl.textContent = name;
+    sDiv.appendChild(nameEl);
+    const lines = text.split('\n');
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      const bars = line.split('/').filter(p => p.trim());
+      const formatted = bars.map(b => `| ${b.trim()} `).join('') + '|';
+      const lineEl = document.createElement('div');
+      lineEl.style.cssText = 'font-family:Courier New,monospace;font-size:0.88rem;color:var(--green);line-height:1.8;';
+      lineEl.textContent = formatted;
+      sDiv.appendChild(lineEl);
+    }
+    structDiv.appendChild(sDiv);
+  });
+
+  container.appendChild(structDiv);
+}
+
+// ============================================================
+// COLLECT DATA HELPER
+// ============================================================
+function collectSongData() {
+  const guitar = document.getElementById('cbGuitar').checked;
+  const piano = document.getElementById('cbPiano').checked;
+  const ukulele = document.getElementById('cbUkulele').checked;
+  const title = document.getElementById('songTitle').value || 'Untitled';
+  const artist = document.getElementById('songArtist').value || '';
+  const tempo = document.getElementById('songTempo').value || '';
+  const meter = document.getElementById('songMeter').value || '4/4';
+  const lyrics = document.getElementById('songLyrics').value || '';
+  
+  const sections = [];
+  document.querySelectorAll('.section-block').forEach(block => {
+    const name = block.querySelector('.section-name-input').value;
+    const text = block.querySelector('.section-chords').value.trim();
+    if (text) sections.push({ name, text });
+  });
+  
+  const allChords = getAllSectionChords();
+  
+  return { guitar, piano, ukulele, title, artist, tempo, meter, lyrics, sections, allChords };
+}
+
+// ============================================================
+// SVG TO PNG (for docx/pptx embedding)
+// ============================================================
+function svgToPngDataUrl(svgString, width, height) {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    const scale = 2;
+    canvas.width = width * scale;
+    canvas.height = height * scale;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(scale, scale);
+    
+    const img = new Image();
+    const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    
+    img.onload = () => {
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('SVG conversion failed')); };
+    img.src = url;
+  });
+}
+
+async function getChordImageData(chord, inst) {
+  let svgString = '';
+  let w = 0, h = 0;
+  
+  if (inst === 'guitar') {
+    const positions = getChordPositions(chord, guitarDB);
+    if (positions.length === 0) return null;
+    const pos = positions[Math.min(getPosIndex('g', chord), positions.length - 1)];
+    svgString = drawStringedSVG(pos, 6, 70, 100);
+    w = 70; h = 100;
+  } else if (inst === 'ukulele') {
+    const positions = getChordPositions(chord, ukuleleDB);
+    if (positions.length === 0) return null;
+    const pos = positions[Math.min(getPosIndex('u', chord), positions.length - 1)];
+    svgString = drawStringedSVG(pos, 4, 58, 100);
+    w = 58; h = 100;
+  } else if (inst === 'piano') {
+    const inv = getPianoInversion(chord);
+    svgString = drawPianoSVG(chord, inv);
+    // get piano dimensions
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = svgString;
+    const svg = tempDiv.querySelector('svg');
+    w = parseInt(svg.getAttribute('width'));
+    h = parseInt(svg.getAttribute('height'));
+  }
+  
+  if (!svgString) return null;
+  
+  try {
+    const dataUrl = await svgToPngDataUrl(svgString, w, h);
+    return { dataUrl, w, h };
+  } catch (e) {
+    return null;
+  }
+}
+
+// ============================================================
+// WORD DOWNLOAD
+// ============================================================
+async function downloadWord() {
+  const { docx: { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, 
+    BorderStyle, HeadingLevel, AlignmentType, ImageRun, ShadingType } } = window;
+  
+  if (!window.docx) { alert('docx biblioteket ikke indlæst endnu. Vent og prøv igen.'); return; }
+  
+  const d = collectSongData();
+  const children = [];
+  
+  // Title
+  children.push(new Paragraph({
+    children: [new TextRun({ text: d.title, bold: true, size: 48 })],
+    alignment: AlignmentType.CENTER,
+    spacing: { after: 200 }
+  }));
+  
+  // Artist / tempo / meter
+  const infoText = [d.artist, d.tempo, d.meter].filter(Boolean).join('  ·  ');
+  if (infoText) {
+    children.push(new Paragraph({
+      children: [new TextRun({ text: infoText, size: 24, color: '555555' })],
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 300 }
+    }));
+  }
+  
+  // Diagram section header
+  const instLabels = [];
+  if (d.guitar) instLabels.push('Guitar');
+  if (d.piano) instLabels.push('Klaver');
+  if (d.ukulele) instLabels.push('Ukulele');
+  
+  if (instLabels.length > 0) {
+    children.push(new Paragraph({
+      children: [new TextRun({ text: `Akkorddiagrammer — ${instLabels.join(' / ')}`, bold: true, size: 28 })],
+      spacing: { before: 200, after: 200 }
+    }));
+  }
+  
+  // Chord diagrams — one table per instrument, each with correct image sizing
+  if (d.allChords.length > 0 && instLabels.length > 0) {
+    const cols = 5;
+
+    for (const inst of ['guitar', 'piano', 'ukulele']) {
+      if ((inst === 'guitar' && !d.guitar) || (inst === 'piano' && !d.piano) || (inst === 'ukulele' && !d.ukulele)) continue;
+
+      const instNameMap = { guitar: '🎸 Guitar', piano: '🎹 Klaver', ukulele: '🪗 Ukulele' };
+      children.push(new Paragraph({
+        children: [new TextRun({ text: instNameMap[inst], bold: true, size: 24, color: '374151' })],
+        spacing: { before: 300, after: 120 }
+      }));
+
+      const rows = [];
+      for (let i = 0; i < d.allChords.length; i += cols) {
+        const rowChords = d.allChords.slice(i, i + cols);
+
+        // Label row
+        const labelCells = [];
+        for (let ci = 0; ci < cols; ci++) {
+          const chord = rowChords[ci] || '';
+          labelCells.push(new TableCell({
+            children: [new Paragraph({
+              children: [new TextRun({ text: chord, bold: true, size: 18 })],
+              alignment: AlignmentType.CENTER
+            })],
+            width: { size: 20, type: WidthType.PERCENTAGE }
+          }));
+        }
+        rows.push(new TableRow({ children: labelCells }));
+
+        // Image row — one instrument per table, so one image per cell
+        const imgCells = [];
+        for (let ci = 0; ci < cols; ci++) {
+          const chord = rowChords[ci];
+          const cellChildren = [];
+
+          if (chord) {
+            const imgData = await getChordImageData(chord, inst);
+            if (imgData) {
+              const base64 = imgData.dataUrl.split(',')[1];
+              // Max width per cell = page width (5900 twips ≈ 460px) / cols
+              // Keep images small enough: max 80px wide for guitar/ukulele, 120px for piano
+              const maxPx = inst === 'piano' ? 110 : 72;
+              const scale = Math.min(maxPx / imgData.w, 1.0);
+              const wpx = Math.round(imgData.w * scale);
+              const hpx = Math.round(imgData.h * scale);
+              cellChildren.push(new Paragraph({
+                children: [new ImageRun({
+                  data: base64,
+                  transformation: { width: wpx, height: hpx }
+                })],
+                alignment: AlignmentType.CENTER
+              }));
+            }
+          }
+
+          if (cellChildren.length === 0) cellChildren.push(new Paragraph({ children: [] }));
+          imgCells.push(new TableCell({
+            children: cellChildren,
+            width: { size: 20, type: WidthType.PERCENTAGE }
+          }));
+        }
+        rows.push(new TableRow({ children: imgCells }));
+      }
+
+      children.push(new Table({ rows, width: { size: 100, type: WidthType.PERCENTAGE } }));
+    }
+  }
+  
+  // Chord structure
+  children.push(new Paragraph({
+    children: [new TextRun({ text: 'Akkordstruktur', bold: true, size: 28 })],
+    spacing: { before: 400, after: 200 }
+  }));
+  
+  for (const sec of d.sections) {
+    children.push(new Paragraph({
+      children: [new TextRun({ text: sec.name, bold: true, size: 24, color: '2563eb' })],
+      spacing: { before: 200, after: 100 }
+    }));
+    
+    const lines = sec.text.split('\n');
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      const bars = line.split('/').filter(p => p.trim());
+      const formatted = bars.map(b => `| ${b.trim()} `).join('') + '|';
+      children.push(new Paragraph({
+        children: [new TextRun({ text: formatted, font: 'Courier New', size: 20 })],
+        spacing: { after: 80 }
+      }));
+    }
+  }
+  
+  // Lyrics
+  if (d.lyrics.trim()) {
+    children.push(new Paragraph({
+      children: [new TextRun({ text: 'Sangtekst', bold: true, size: 28 })],
+      spacing: { before: 400, after: 200 }
+    }));
+    const lyricLines = d.lyrics.split('\n');
+    for (const line of lyricLines) {
+      children.push(new Paragraph({
+        children: [new TextRun({ text: line, size: 20 })],
+        spacing: { after: 60 }
+      }));
+    }
+  }
+  
+  const doc = new Document({
+    sections: [{ children }]
+  });
+  
+  try {
+    const blob = await Packer.toBlob(doc);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${d.title.replace(/[^a-zA-Z0-9æøåÆØÅ ]/g, '')}.docx`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showStatus();
+  } catch (e) {
+    alert('Fejl ved generering af Word-dokument: ' + e.message);
+    console.error(e);
+  }
+}
+
+// ============================================================
+// POWERPOINT DOWNLOAD
+// ============================================================
+async function downloadPptx() {
+  if (!window.PptxGenJS) { alert('PptxGenJS biblioteket ikke indlæst endnu. Vent og prøv igen.'); return; }
+  
+  const d = collectSongData();
+  const pptx = new PptxGenJS();
+  pptx.layout = 'LAYOUT_WIDE'; // 13.33" x 7.5"
+  
+  const DARK = '0a0a1a';
+  const ACCENT = 'e94560';
+  const LIGHT = 'eaeaea';
+  const MUTED = '8892a4';
+  const GREEN = '4ecca3';
+  
+  // Gather diagram images
+  const diagImages = {};
+  for (const chord of d.allChords) {
+    diagImages[chord] = {};
+    for (const inst of ['guitar', 'piano', 'ukulele']) {
+      if ((inst === 'guitar' && !d.guitar) || (inst === 'piano' && !d.piano) || (inst === 'ukulele' && !d.ukulele)) continue;
+      const imgData = await getChordImageData(chord, inst);
+      if (imgData) diagImages[chord][inst] = imgData;
+    }
+  }
+  
+  // --- SLIDE 1: Title ---
+  const slide1 = pptx.addSlide();
+  slide1.background = { color: DARK };
+  
+  slide1.addText(d.title, {
+    x: 0.4, y: 1.5, w: 5.5, h: 1.5,
+    fontSize: 44, bold: true, color: ACCENT, fontFace: 'Calibri'
+  });
+  
+  const infoText = [d.artist, d.tempo, d.meter].filter(Boolean).join('  ·  ');
+  if (infoText) {
+    slide1.addText(infoText, {
+      x: 0.4, y: 3.2, w: 5.5, h: 0.5,
+      fontSize: 18, color: MUTED, fontFace: 'Calibri'
+    });
+  }
+  
+  // Instrument labels on title
+  const instLabels = [];
+  if (d.guitar) instLabels.push('🎸 Guitar');
+  if (d.piano) instLabels.push('🎹 Klaver');
+  if (d.ukulele) instLabels.push('🪗 Ukulele');
+  if (instLabels.length > 0) {
+    slide1.addText(instLabels.join('  '), {
+      x: 0.4, y: 4.0, w: 5.5, h: 0.4,
+      fontSize: 14, color: GREEN, fontFace: 'Calibri'
+    });
+  }
+  
+  // Accent line
+  slide1.addShape(pptx.ShapeType.rect, {
+    x: 0.4, y: 5.0, w: 2.5, h: 0.06,
+    fill: { color: ACCENT }
+  });
+  
+  // --- SLIDE 2+: Chord diagrams — one slide per instrument ---
+  if (d.allChords.length > 0) {
+    const instList = [];
+    if (d.guitar) instList.push({ key: 'guitar', label: '🎸 Guitar' });
+    if (d.piano) instList.push({ key: 'piano', label: '🎹 Klaver' });
+    if (d.ukulele) instList.push({ key: 'ukulele', label: '🪗 Ukulele' });
+
+    for (const { key, label } of instList) {
+      const diagSlide = pptx.addSlide();
+      diagSlide.background = { color: DARK };
+      diagSlide.addText(`Akkorddiagrammer — ${label}`, {
+        x: 0.4, y: 0.15, w: 12.5, h: 0.45,
+        fontSize: 18, bold: true, color: ACCENT, fontFace: 'Calibri'
+      });
+      diagSlide.addShape(pptx.ShapeType.rect, {
+        x: 0.4, y: 0.67, w: 12.5, h: 0.04, fill: { color: '2a3a5c' }
+      });
+
+      const maxPerRow = Math.min(d.allChords.length, 8);
+      const colW = 12.5 / maxPerRow;
+
+      for (let ci = 0; ci < d.allChords.length; ci++) {
+        const chord = d.allChords[ci];
+        const col = ci % maxPerRow;
+        const rowOff = Math.floor(ci / maxPerRow) * 3.2;
+        const x = 0.4 + col * colW;
+        let y = 0.8 + rowOff;
+
+        diagSlide.addText(chord, {
+          x, y, w: colW - 0.05, h: 0.28,
+          fontSize: 13, bold: true, color: LIGHT, align: 'center', fontFace: 'Calibri'
+        });
+        y += 0.3;
+
+        const img = diagImages[chord]?.[key];
+        if (img) {
+          const maxW = colW - 0.15;
+          const scale = Math.min(maxW / (img.w / 96), 2.5);
+          const iW = Math.min((img.w / 96) * scale, maxW);
+          const iH = (img.h / 96) * scale * (iW / ((img.w / 96) * scale));
+          try {
+            diagSlide.addImage({
+              data: img.dataUrl,
+              x: x + (colW - iW) / 2,
+              y, w: iW, h: iH
+            });
+          } catch(e) { console.warn('img fail', e); }
+        }
+      }
+    }
+  }
+
+  // --- Section slides: all sections on one slide if possible, else split ---
+  {
+    const filledSections = d.sections.filter(s => s.text.trim());
+
+    // Estimate rows needed per section
+    function sectionRowCount(sec) {
+      return sec.text.split('\n').filter(l => l.trim()).length;
+    }
+    const totalRows = filledSections.reduce((s, sec) => s + sectionRowCount(sec) + 1.2, 0);
+    const rowH = 0.85;
+    const headerH = 0.75;
+    const slideH = 7.5;
+    const usableH = slideH - headerH;
+
+    // Try to fit all on one slide
+    const fitsOnOne = (totalRows * rowH) <= usableH;
+
+    if (fitsOnOne && filledSections.length > 0) {
+      const slide = pptx.addSlide();
+      slide.background = { color: DARK };
+      slide.addText('Akkordstruktur', {
+        x: 0.4, y: 0.15, w: 12.5, h: 0.45,
+        fontSize: 18, bold: true, color: ACCENT, fontFace: 'Calibri'
+      });
+      slide.addShape(pptx.ShapeType.rect, {
+        x: 0.4, y: 0.67, w: 12.5, h: 0.04, fill: { color: '2a3a5c' }
+      });
+
+      let y = 0.82;
+      for (const sec of filledSections) {
+        slide.addText(sec.name, {
+          x: 0.4, y, w: 12.5, h: 0.38,
+          fontSize: 15, bold: true, color: GREEN, fontFace: 'Calibri'
+        });
+        y += 0.42;
+
+        const lines = sec.text.split('\n').filter(l => l.trim());
+        for (const line of lines) {
+          const bars = line.split('/').filter(p => p.trim());
+          let x = 0.5;
+          const barW = Math.min(1.6, (12.3) / Math.max(bars.length, 1));
+
+          for (const bar of bars) {
+            const chords = bar.trim().split(/\s+/).filter(Boolean);
+            const chordText = chords.join('\n');
+            slide.addShape(pptx.ShapeType.rect, {
+              x, y, w: barW - 0.06, h: rowH - 0.1,
+              fill: { color: '16213e' },
+              line: { color: '2a3a5c', width: 1 }
+            });
+            slide.addShape(pptx.ShapeType.rect, {
+              x: x - 0.02, y, w: 0.04, h: rowH - 0.1,
+              fill: { color: ACCENT }
+            });
+            slide.addText(chordText, {
+              x: x + 0.04, y: y + 0.04, w: barW - 0.16, h: rowH - 0.18,
+              fontSize: chords.length > 1 ? 12 : 15,
+              bold: true, color: LIGHT, fontFace: 'Calibri', valign: 'middle', align: 'center'
+            });
+            x += barW;
+          }
+          y += rowH;
+        }
+        y += 0.2; // section spacing
+      }
+    } else {
+      // One slide per section
+      for (const sec of filledSections) {
+        const slide = pptx.addSlide();
+        slide.background = { color: DARK };
+        slide.addText(sec.name, {
+          x: 0.4, y: 0.15, w: 12.5, h: 0.55,
+          fontSize: 24, bold: true, color: GREEN, fontFace: 'Calibri'
+        });
+        slide.addShape(pptx.ShapeType.rect, {
+          x: 0.4, y: 0.78, w: 12.5, h: 0.04, fill: { color: '2a3a5c' }
+        });
+
+        const lines = sec.text.split('\n').filter(l => l.trim());
+        let y = 0.95;
+        for (const line of lines) {
+          const bars = line.split('/').filter(p => p.trim());
+          let x = 0.4;
+          const barW = Math.min(1.8, 12.5 / Math.max(bars.length, 1));
+          for (const bar of bars) {
+            const chords = bar.trim().split(/\s+/).filter(Boolean);
+            const chordText = chords.join('\n');
+            slide.addShape(pptx.ShapeType.rect, {
+              x, y, w: barW - 0.08, h: 0.78,
+              fill: { color: '16213e' }, line: { color: '2a3a5c', width: 1 }
+            });
+            slide.addShape(pptx.ShapeType.rect, {
+              x: x - 0.02, y, w: 0.04, h: 0.78, fill: { color: ACCENT }
+            });
+            slide.addText(chordText, {
+              x: x + 0.05, y: y + 0.05, w: barW - 0.18, h: 0.68,
+              fontSize: chords.length > 1 ? 14 : 18,
+              bold: true, color: LIGHT, fontFace: 'Calibri', valign: 'middle', align: 'center'
+            });
+            x += barW;
+          }
+          y += 1.0;
+        }
+      }
+    }
+  }
+  
+  // --- Lyrics slide ---
+  if (d.lyrics.trim()) {
+    const lyricsSlide = pptx.addSlide();
+    lyricsSlide.background = { color: DARK };
+    lyricsSlide.addText('Sangtekst', {
+      x: 0.4, y: 0.15, w: 12, h: 0.45,
+      fontSize: 22, bold: true, color: ACCENT, fontFace: 'Calibri'
+    });
+    
+    const lyricLines = d.lyrics.split('\n');
+    const half = Math.ceil(lyricLines.length / 2);
+    const leftLines = lyricLines.slice(0, half);
+    const rightLines = lyricLines.slice(half);
+    
+    lyricsSlide.addText(leftLines.join('\n'), {
+      x: 0.4, y: 0.7, w: 5.9, h: 6.5,
+      fontSize: 11, color: LIGHT, fontFace: 'Calibri', valign: 'top', wrap: true
+    });
+    
+    lyricsSlide.addText(rightLines.join('\n'), {
+      x: 6.6, y: 0.7, w: 6.3, h: 6.5,
+      fontSize: 11, color: LIGHT, fontFace: 'Calibri', valign: 'top', wrap: true
+    });
+  }
+  
+  // Download
+  try {
+    const fileName = `${d.title.replace(/[^a-zA-Z0-9æøåÆØÅ ]/g, '')}.pptx`;
+    await pptx.writeFile({ fileName });
+    showStatus();
+  } catch (e) {
+    alert('Fejl ved generering af PowerPoint: ' + e.message);
+    console.error(e);
+  }
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function showStatus() {
+  const el = document.getElementById('statusMsg');
+  el.style.display = 'inline-block';
+  setTimeout(() => { el.style.display = 'none'; }, 3000);
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+  loadDatabases();
+  renderPreview();
+});
+</script>
+
+</body>
+</html>
