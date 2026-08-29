@@ -65,32 +65,74 @@
     background:var(--white-key);
     border-radius:18px;
     box-shadow:0 10px 30px rgba(15,51,45,0.10), 0 2px 6px rgba(15,51,45,0.06);
-    padding:28px 22px 22px;
-    max-width:640px;
+    padding:26px 22px 22px;
+    max-width:680px;
     width:100%;
   }
 
-  .scorebar{
+  .topbar{
     display:flex;
+    flex-wrap:wrap;
+    gap:10px;
     justify-content:space-between;
-    align-items:center;
+    align-items:flex-start;
     margin-bottom:14px;
+  }
+
+  .keypicker{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+
+  .keypicker label{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:#8a9189;
+    font-weight:700;
+  }
+
+  select#keySelect{
     font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:15px;
+    color:var(--teal-dark);
+    background:rgba(27,75,67,0.08);
+    border:none;
+    border-radius:10px;
+    padding:7px 12px;
+    cursor:pointer;
+  }
+
+  .key-signature-note{
+    font-size:12.5px;
+    color:#8a9189;
+    margin-top:2px;
+  }
+
+  .scoreblock{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:4px;
   }
 
   .score{
-    font-size:15px;
+    font-size:14px;
     color:var(--teal-dark);
     background:rgba(27,75,67,0.08);
     padding:6px 14px;
     border-radius:999px;
-    font-weight:600;
+    font-weight:700;
+    font-family:'Fraunces', serif;
+    white-space:nowrap;
   }
 
   .streak{
-    font-size:14px;
+    font-size:13px;
     color:var(--gold);
-    font-weight:600;
+    font-weight:700;
   }
 
   .staff-wrap{
@@ -169,8 +211,14 @@
     background:linear-gradient(180deg,#2b2b2b,#111);
     border-radius:0 0 6px 6px;
     z-index:2;
-    pointer-events:none;
+    color:#cfc9b8;
+    font-size:11px;
+    padding-bottom:8px;
   }
+  .black:active{ transform:translateY(1px); }
+  .black.correct-flash{ background:var(--sage); color:white; }
+  .black.wrong-flash{ background:var(--coral); color:white; }
+  .black.reveal-flash{ background:var(--gold); color:white; }
 
   .controls{
     display:flex;
@@ -190,11 +238,15 @@
     cursor:pointer;
     transition:transform 0.08s, box-shadow 0.15s;
     box-shadow:0 3px 0 rgba(0,0,0,0.12);
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
   }
   button.action:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,0.12); }
 
   .btn-primary{ background:var(--teal); color:white; }
   .btn-ghost{ background:#EFE9D8; color:var(--teal-dark); }
+  .btn-sound{ background:var(--gold); color:white; }
 
   .settings{
     display:flex;
@@ -210,6 +262,14 @@
     align-items:center;
     gap:6px;
     cursor:pointer;
+  }
+
+  .naming-note{
+    text-align:center;
+    font-size:12px;
+    color:#a3ab9f;
+    margin-top:10px;
+    line-height:1.5;
   }
 
   footer{
@@ -228,14 +288,26 @@
 
 <header>
   <h1><span class="clef">𝄞</span> Nodelæsning</h1>
-  <p class="subtitle">Find noden på klaviaturet</p>
+  <p class="subtitle">Find og hør noden på klaviaturet</p>
 </header>
 
 <div class="board">
 
-  <div class="scorebar">
-    <div class="score" id="score">0 / 0 rigtige</div>
-    <div class="streak" id="streak"></div>
+  <div class="topbar">
+    <div class="keypicker">
+      <label for="keySelect">Toneart</label>
+      <select id="keySelect">
+        <option value="C-dur">C-dur</option>
+        <option value="G-dur">G-dur</option>
+        <option value="D-dur">D-dur</option>
+        <option value="F-dur">F-dur</option>
+      </select>
+      <div class="key-signature-note" id="keySigNote"></div>
+    </div>
+    <div class="scoreblock">
+      <div class="score" id="score">0 / 0 rigtige</div>
+      <div class="streak" id="streak"></div>
+    </div>
   </div>
 
   <div class="staff-wrap">
@@ -249,6 +321,7 @@
   </div>
 
   <div class="controls">
+    <button class="action btn-sound" id="playBtn">🔊 Hør tonen</button>
     <button class="action btn-ghost" id="hintBtn">Vis svar</button>
     <button class="action btn-primary" id="nextBtn">Ny node</button>
   </div>
@@ -258,6 +331,8 @@
     <label><input type="checkbox" id="rangeToggle"> Udvid til C4–C6</label>
   </div>
 
+  <p class="naming-note">Vi bruger danske tonenavne: H = det naturlige tonetrin (engelsk "B"), mens B betyder tonen sænket en halv tone (engelsk "B♭").</p>
+
 </div>
 
 <footer>Alterna10 · musikundervisning</footer>
@@ -265,36 +340,93 @@
 <script>
 (function(){
 
-  // Note data for a treble-clef staff.
-  // y is the vertical position on the SVG staff (in the same coordinate
-  // system as the staff lines). ledger:true means it needs a ledger line.
-  const NOTE_DEFS = {
-    'C4':  { y: 100, ledger: true  },
-    'D4':  { y: 95,  ledger: false },
-    'E4':  { y: 90,  ledger: false }, // bottom line
-    'F4':  { y: 85,  ledger: false },
-    'G4':  { y: 80,  ledger: false },
-    'A4':  { y: 75,  ledger: false },
-    'B4':  { y: 70,  ledger: false }, // middle line
-    'C5':  { y: 65,  ledger: false },
-    'D5':  { y: 60,  ledger: false },
-    'E5':  { y: 55,  ledger: false },
-    'F5':  { y: 50,  ledger: false }, // top line
-    'G5':  { y: 45,  ledger: false, ledgerAbove:false },
-    'A5':  { y: 40,  ledger: true  },
-    'B5':  { y: 35,  ledger: true  },
-    'C6':  { y: 30,  ledger: true  }
+  // ---------- Music theory data (Danish note names) ----------
+
+  // Natural letters in Danish naming: C D E F G A H (H = the note a European
+  // would call "B natural"; "B" is reserved for that note lowered a semitone).
+  const WHITE_SEQUENCE = ['C','D','E','F','G','A','H'];
+  const LETTER_SEMITONE = { C:0, D:2, E:4, F:5, G:7, A:9, H:11 };
+  const BLACK_AFTER = { C:true, D:true, F:true, G:true, A:true }; // no black key after E or H
+
+  // y-position on the staff (SVG coords) for each natural note, C4 to C6.
+  const NOTE_Y = {
+    'C4': { y:100, ledger:true  },
+    'D4': { y:95,  ledger:false },
+    'E4': { y:90,  ledger:false },
+    'F4': { y:85,  ledger:false },
+    'G4': { y:80,  ledger:false },
+    'A4': { y:75,  ledger:false },
+    'H4': { y:70,  ledger:false },
+    'C5': { y:65,  ledger:false },
+    'D5': { y:60,  ledger:false },
+    'E5': { y:55,  ledger:false },
+    'F5': { y:50,  ledger:false },
+    'G5': { y:45,  ledger:false },
+    'A5': { y:40,  ledger:true  },
+    'H5': { y:35,  ledger:true  },
+    'C6': { y:30,  ledger:true  }
   };
 
-  const BASE_RANGE = ['C4','D4','E4','F4','G4','A4','B4','C5'];
-  const EXTENDED_RANGE = ['C4','D4','E4','F4','G4','A4','B4','C5','D5','E5','F5','G5','A5','B5','C6'];
+  // Key signatures. "alter" maps a natural letter to how it changes in this key.
+  const KEYS = {
+    'C-dur': { alter: {}, sigType:null, sigLetters:[] },
+    'G-dur': { alter: { F:{ suffix:'is', semi:1 } }, sigType:'#', sigLetters:['F'] },
+    'D-dur': { alter: { F:{ suffix:'is', semi:1 }, C:{ suffix:'is', semi:1 } }, sigType:'#', sigLetters:['F','C'] },
+    'F-dur': { alter: { H:{ name:'b', semi:-1 } }, sigType:'b', sigLetters:['H'] }
+  };
 
-  // Keyboard layout: white keys C4..C6 (2 octaves), black keys where relevant.
-  const WHITE_SEQUENCE = ['C','D','E','F','G','A','B'];
-  const BLACK_AFTER = { 'C':true,'D':true,'F':true,'G':true,'A':true }; // sharp exists after these
+  // Standard vertical placement of accidentals in a treble-clef key signature.
+  const SHARP_SIG_Y = { F:50, C:65 };
+  const FLAT_SIG_Y  = { H:70 };
 
+  function noteDisplayName(letter, alter){
+    if (!alter) return letter;
+    if (alter.name) return alter.name;
+    return letter.toLowerCase() + alter.suffix;
+  }
+
+  function midiOf(letter, alter, octave){
+    const semitone = LETTER_SEMITONE[letter] + (alter ? alter.semi : 0);
+    return semitone + (parseInt(octave, 10) + 1) * 12;
+  }
+
+  function freqOf(midi){
+    return 440 * Math.pow(2, (midi - 69) / 12);
+  }
+
+  // ---------- Audio ----------
+
+  let audioCtx = null;
+  function ensureAudio(){
+    if (!audioCtx){
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+
+  function playTone(midi, duration){
+    duration = duration || 0.55;
+    const ctx = ensureAudio();
+    const t0 = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freqOf(midi), t0);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(0.3, t0 + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.03);
+  }
+
+  // ---------- State ----------
+
+  let currentKeyName = 'C-dur';
   let currentNote = null;
-  let previousNote = null;
+  let previousNoteKey = null;
   let correctCount = 0;
   let attemptCount = 0;
   let streak = 0;
@@ -309,8 +441,11 @@
   const rangeToggle = document.getElementById('rangeToggle');
   const hintBtn = document.getElementById('hintBtn');
   const nextBtn = document.getElementById('nextBtn');
+  const playBtn = document.getElementById('playBtn');
+  const keySelect = document.getElementById('keySelect');
+  const keySigNote = document.getElementById('keySigNote');
 
-  const STAFF_LINE_Y = [50, 60, 70, 80, 90]; // top line F5 .. bottom line E4
+  const STAFF_LINE_Y = [50, 60, 70, 80, 90];
   const STAFF_X_START = 30;
   const STAFF_X_END = 280;
   const NOTE_X = 190;
@@ -319,7 +454,6 @@
     svg.innerHTML = '';
     const ns = 'http://www.w3.org/2000/svg';
 
-    // Five staff lines
     STAFF_LINE_Y.forEach(y => {
       const line = document.createElementNS(ns, 'line');
       line.setAttribute('x1', STAFF_X_START);
@@ -331,7 +465,6 @@
       svg.appendChild(line);
     });
 
-    // Treble clef
     const clef = document.createElementNS(ns, 'text');
     clef.setAttribute('x', 36);
     clef.setAttribute('y', 96);
@@ -340,19 +473,41 @@
     clef.setAttribute('fill', '#1B4B43');
     clef.textContent = '𝄞';
     svg.appendChild(clef);
+
+    drawKeySignature(svg);
   }
 
-  function drawNote(noteName){
+  function drawKeySignature(svg){
     const ns = 'http://www.w3.org/2000/svg';
-    const def = NOTE_DEFS[noteName];
-    const y = def.y;
+    const keyDef = KEYS[currentKeyName];
+    if (!keyDef.sigType) return;
 
-    // Ledger lines (may need more than one for far notes)
-    if (def.ledger){
+    const posTable = keyDef.sigType === '#' ? SHARP_SIG_Y : FLAT_SIG_Y;
+    const glyph = keyDef.sigType === '#' ? '♯' : '♭';
+
+    keyDef.sigLetters.forEach((letter, i) => {
+      const y = posTable[letter];
+      const x = 95 + i * 11;
+      const t = document.createElementNS(ns, 'text');
+      t.setAttribute('x', x);
+      t.setAttribute('y', y + 5);
+      t.setAttribute('font-size', '20');
+      t.setAttribute('font-family', 'Georgia, serif');
+      t.setAttribute('fill', '#1B4B43');
+      t.textContent = glyph;
+      svg.appendChild(t);
+    });
+  }
+
+  function drawNote(note){
+    const ns = 'http://www.w3.org/2000/svg';
+    const y = note.y;
+
+    if (note.ledger){
       const ledgerYs = [];
-      if (y >= 100){ // below staff (E4 bottom line is 90)
+      if (y >= 100){
         for (let ly = 100; ly <= y; ly += 10) ledgerYs.push(ly);
-      } else if (y <= 40){ // above staff (F5 top line is 50)
+      } else if (y <= 40){
         for (let ly = 40; ly >= y; ly -= 10) ledgerYs.push(ly);
       }
       ledgerYs.forEach(ly => {
@@ -367,7 +522,6 @@
       });
     }
 
-    // Notehead (slightly rotated ellipse for a hand-set look)
     const head = document.createElementNS(ns, 'ellipse');
     head.setAttribute('cx', NOTE_X);
     head.setAttribute('cy', y);
@@ -377,9 +531,8 @@
     head.setAttribute('transform', `rotate(-18 ${NOTE_X} ${y})`);
     staffEl.appendChild(head);
 
-    // Stem: down if note sits on/above the middle line, up otherwise
     const stem = document.createElementNS(ns, 'line');
-    const stemUp = y >= 70; // B4 (middle line) and below -> stem up
+    const stemUp = y >= 70;
     if (stemUp){
       stem.setAttribute('x1', NOTE_X + 6.5);
       stem.setAttribute('x2', NOTE_X + 6.5);
@@ -396,9 +549,50 @@
     staffEl.appendChild(stem);
   }
 
-  function renderStaff(noteName){
+  function renderStaff(note){
     buildStaffBase(staffEl);
-    drawNote(noteName);
+    drawNote(note);
+  }
+
+  // ---------- Range / scale building ----------
+
+  function buildLetterRange(extended){
+    const octaves = extended ? ['4','5','6'] : ['4','5'];
+    const seq = [];
+    octaves.forEach((oct, oi) => {
+      WHITE_SEQUENCE.forEach(letter => {
+        if (oi === octaves.length - 1 && letter !== 'C') return;
+        seq.push({ letter, octave: oct });
+      });
+    });
+    return seq;
+  }
+
+  function buildScaleNotes(){
+    const keyDef = KEYS[currentKeyName];
+    const extended = rangeToggle.checked;
+    return buildLetterRange(extended).map(({ letter, octave }) => {
+      const alter = keyDef.alter[letter] || null;
+      const yInfo = NOTE_Y[letter + octave];
+      return {
+        key: letter + octave,
+        letter, octave, alter,
+        displayName: noteDisplayName(letter, alter),
+        midi: midiOf(letter, alter, octave),
+        y: yInfo.y,
+        ledger: yInfo.ledger
+      };
+    });
+  }
+
+  // ---------- Keyboard ----------
+
+  function blackKeyLabel(letter){
+    const keyDef = KEYS[currentKeyName];
+    if (letter === 'A' && keyDef.alter.H && keyDef.alter.H.name){
+      return keyDef.alter.H.name; // "b" for F-dur
+    }
+    return letter.toLowerCase() + 'is';
   }
 
   function buildKeyboard(){
@@ -406,50 +600,61 @@
     const showLabels = labelsToggle.checked;
     const extended = rangeToggle.checked;
     const octaves = extended ? ['4','5','6'] : ['4','5'];
-    // Only render up to C6 if extended (stop right after C in the last octave)
     const whiteKeys = [];
     octaves.forEach((oct, oi) => {
       WHITE_SEQUENCE.forEach(letter => {
-        if (oi === octaves.length - 1 && letter !== 'C') return; // stop at final C
-        whiteKeys.push(letter + oct);
+        if (oi === octaves.length - 1 && letter !== 'C') return;
+        whiteKeys.push({ letter, octave: oct });
       });
     });
 
     const keyWidth = 70;
     keyboardEl.style.width = (whiteKeys.length * keyWidth) + 'px';
 
-    whiteKeys.forEach((note, i) => {
+    whiteKeys.forEach((wk, i) => {
+      const midi = midiOf(wk.letter, null, wk.octave);
       const key = document.createElement('div');
       key.className = 'key white';
       key.style.left = (i * keyWidth) + 'px';
-      key.dataset.note = note;
-      if (showLabels) key.textContent = note.replace(/[0-9]/, '');
-      key.addEventListener('click', () => handleKeyPress(note, key));
+      key.dataset.midi = midi;
+      if (showLabels) key.textContent = wk.letter;
+      key.addEventListener('click', () => handleKeyPress(midi, key));
       keyboardEl.appendChild(key);
 
-      // Black key after this white key, if applicable and not the last visible key
-      const letter = note[0];
       const isLastKey = (i === whiteKeys.length - 1);
-      if (BLACK_AFTER[letter] && !isLastKey){
+      if (BLACK_AFTER[wk.letter] && !isLastKey){
+        const blackMidi = midiOf(wk.letter, { semi:1 }, wk.octave);
         const black = document.createElement('div');
         black.className = 'key black';
         black.style.left = (i * keyWidth + keyWidth - 21) + 'px';
+        black.dataset.midi = blackMidi;
+        if (showLabels) black.textContent = blackKeyLabel(wk.letter);
+        black.addEventListener('click', () => handleKeyPress(blackMidi, black));
         keyboardEl.appendChild(black);
       }
     });
   }
 
-  function currentRange(){
-    return rangeToggle.checked ? EXTENDED_RANGE : BASE_RANGE;
+  // ---------- Game logic ----------
+
+  function updateKeySignatureNote(){
+    const keyDef = KEYS[currentKeyName];
+    if (!keyDef.sigType){
+      keySigNote.textContent = 'Ingen fortegn';
+      return;
+    }
+    const names = keyDef.sigLetters.map(l => noteDisplayName(l, keyDef.alter[l]));
+    const word = keyDef.sigType === '#' ? 'kryds' : 'b';
+    keySigNote.textContent = keyDef.sigLetters.length + ' ' + word + ' (' + names.join(', ') + ')';
   }
 
   function pickNewNote(){
-    const range = currentRange();
+    const notes = buildScaleNotes();
     let candidate;
     do {
-      candidate = range[Math.floor(Math.random() * range.length)];
-    } while (candidate === previousNote && range.length > 1);
-    previousNote = candidate;
+      candidate = notes[Math.floor(Math.random() * notes.length)];
+    } while (candidate.key === previousNoteKey && notes.length > 1);
+    previousNoteKey = candidate.key;
     currentNote = candidate;
     renderStaff(currentNote);
     setMessage('Klik på den tangent, du tror noden er.', 'neutral');
@@ -466,36 +671,42 @@
     streakEl.textContent = streak >= 3 ? ('🔥 ' + streak + ' i træk') : '';
   }
 
-  function flashKey(note, className, duration){
-    const el = keyboardEl.querySelector('.key[data-note="' + note + '"]');
+  function flashKey(midi, className, duration){
+    const el = keyboardEl.querySelector('.key[data-midi="' + midi + '"]');
     if (!el) return;
     el.classList.add(className);
     setTimeout(() => el.classList.remove(className), duration);
   }
 
-  function handleKeyPress(note, keyEl){
+  function handleKeyPress(midi, keyEl){
+    playTone(midi);
     if (locked || !currentNote) return;
     attemptCount++;
-    if (note === currentNote){
+    if (midi === currentNote.midi){
       locked = true;
       correctCount++;
       streak++;
       updateScore();
-      flashKey(note, 'correct-flash', 700);
-      setMessage('Rigtigt! Det var ' + currentNote.replace(/[0-9]/,'') + '.', 'correct');
-      setTimeout(pickNewNote, 800);
+      flashKey(midi, 'correct-flash', 700);
+      setMessage('Rigtigt! Det var ' + currentNote.displayName + '.', 'correct');
+      setTimeout(pickNewNote, 900);
     } else {
       streak = 0;
       updateScore();
-      flashKey(note, 'wrong-flash', 500);
+      flashKey(midi, 'wrong-flash', 500);
       setMessage('Prøv igen!', 'wrong');
     }
   }
 
   hintBtn.addEventListener('click', () => {
     if (!currentNote) return;
-    flashKey(currentNote, 'reveal-flash', 1000);
+    flashKey(currentNote.midi, 'reveal-flash', 1000);
     setMessage('Svaret er markeret med gult.', 'neutral');
+  });
+
+  playBtn.addEventListener('click', () => {
+    if (!currentNote) return;
+    playTone(currentNote.midi);
   });
 
   nextBtn.addEventListener('click', pickNewNote);
@@ -506,8 +717,16 @@
     pickNewNote();
   });
 
+  keySelect.addEventListener('change', () => {
+    currentKeyName = keySelect.value;
+    updateKeySignatureNote();
+    buildKeyboard();
+    pickNewNote();
+  });
+
   // Init
   buildKeyboard();
+  updateKeySignatureNote();
   updateScore();
   pickNewNote();
 
