@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nodelæsning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF6EC;
+    --paper-line:#E4DCC8;
+    --ink:#22302B;
+    --teal:#1B4B43;
+    --teal-dark:#0F332D;
+    --gold:#C9971F;
+    --sage:#4C9A6A;
+    --coral:#D6564F;
+    --white-key:#FFFDF8;
+    --white-key-shadow:#D9CFB8;
+  }
+
+  * { box-sizing: border-box; }
+
+  body{
+    margin:0;
+    min-height:100vh;
+    background:var(--paper);
+    background-image:
+      radial-gradient(circle at 10% 10%, rgba(27,75,67,0.05), transparent 40%),
+      radial-gradient(circle at 90% 90%, rgba(201,151,31,0.06), transparent 40%);
+    font-family:'Nunito', sans-serif;
+    color:var(--ink);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:24px 14px 48px;
+  }
+
+  header{
+    text-align:center;
+    margin-bottom:18px;
+  }
+
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:700;
+    font-size:clamp(28px, 5vw, 44px);
+    color:var(--teal-dark);
+    margin:0 0 4px;
+    letter-spacing:0.5px;
+  }
+
+  h1 .clef{
+    color:var(--gold);
+  }
+
+  .subtitle{
+    font-size:15px;
+    color:#5b675f;
+    margin:0;
+  }
+
+  .board{
+    background:var(--white-key);
+    border-radius:18px;
+    box-shadow:0 10px 30px rgba(15,51,45,0.10), 0 2px 6px rgba(15,51,45,0.06);
+    padding:28px 22px 22px;
+    max-width:640px;
+    width:100%;
+  }
+
+  .scorebar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:14px;
+    font-family:'Fraunces', serif;
+  }
+
+  .score{
+    font-size:15px;
+    color:var(--teal-dark);
+    background:rgba(27,75,67,0.08);
+    padding:6px 14px;
+    border-radius:999px;
+    font-weight:600;
+  }
+
+  .streak{
+    font-size:14px;
+    color:var(--gold);
+    font-weight:600;
+  }
+
+  .staff-wrap{
+    background:var(--paper);
+    border-radius:12px;
+    padding:10px 6px 4px;
+    margin-bottom:10px;
+    position:relative;
+  }
+
+  svg#staff{
+    width:100%;
+    height:auto;
+    display:block;
+  }
+
+  .message{
+    text-align:center;
+    min-height:30px;
+    font-size:18px;
+    font-weight:800;
+    font-family:'Fraunces', serif;
+    margin:6px 0 14px;
+    transition:color 0.2s;
+  }
+  .message.correct{ color:var(--sage); }
+  .message.wrong{ color:var(--coral); }
+  .message.neutral{ color:#8a9189; }
+
+  .keyboard-scroll{
+    overflow-x:auto;
+    padding-bottom:6px;
+  }
+
+  .keyboard{
+    position:relative;
+    width:560px;
+    max-width:100%;
+    height:170px;
+    margin:0 auto;
+    user-select:none;
+  }
+
+  .key{
+    position:absolute;
+    top:0;
+    border:1px solid var(--white-key-shadow);
+    border-radius:0 0 8px 8px;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    padding-bottom:10px;
+    font-size:13px;
+    font-weight:700;
+    font-family:'Fraunces', serif;
+    color:#9a927a;
+    cursor:pointer;
+    transition:background 0.12s, transform 0.05s;
+  }
+
+  .white{
+    width:70px;
+    height:170px;
+    background:var(--white-key);
+    box-shadow: inset 0 -4px 6px rgba(0,0,0,0.03);
+    z-index:1;
+  }
+  .white:active{ transform:translateY(1px); }
+  .white.correct-flash{ background:var(--sage); color:white; }
+  .white.wrong-flash{ background:var(--coral); color:white; }
+  .white.reveal-flash{ background:var(--gold); color:white; }
+
+  .black{
+    width:42px;
+    height:104px;
+    background:linear-gradient(180deg,#2b2b2b,#111);
+    border-radius:0 0 6px 6px;
+    z-index:2;
+    pointer-events:none;
+  }
+
+  .controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    justify-content:center;
+    margin-top:18px;
+  }
+
+  button.action{
+    font-family:'Nunito', sans-serif;
+    font-weight:700;
+    font-size:14px;
+    border:none;
+    border-radius:999px;
+    padding:11px 20px;
+    cursor:pointer;
+    transition:transform 0.08s, box-shadow 0.15s;
+    box-shadow:0 3px 0 rgba(0,0,0,0.12);
+  }
+  button.action:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,0.12); }
+
+  .btn-primary{ background:var(--teal); color:white; }
+  .btn-ghost{ background:#EFE9D8; color:var(--teal-dark); }
+
+  .settings{
+    display:flex;
+    justify-content:center;
+    gap:18px;
+    margin-top:16px;
+    flex-wrap:wrap;
+    font-size:13.5px;
+    color:#5b675f;
+  }
+  .settings label{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    cursor:pointer;
+  }
+
+  footer{
+    margin-top:22px;
+    font-size:12px;
+    color:#a3ab9f;
+    text-align:center;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    * { transition:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span class="clef">𝄞</span> Nodelæsning</h1>
+  <p class="subtitle">Find noden på klaviaturet</p>
+</header>
+
+<div class="board">
+
+  <div class="scorebar">
+    <div class="score" id="score">0 / 0 rigtige</div>
+    <div class="streak" id="streak"></div>
+  </div>
+
+  <div class="staff-wrap">
+    <svg id="staff" viewBox="0 0 300 130" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+
+  <div class="message neutral" id="message">Klik på den tangent, du tror noden er.</div>
+
+  <div class="keyboard-scroll">
+    <div class="keyboard" id="keyboard"></div>
+  </div>
+
+  <div class="controls">
+    <button class="action btn-ghost" id="hintBtn">Vis svar</button>
+    <button class="action btn-primary" id="nextBtn">Ny node</button>
+  </div>
+
+  <div class="settings">
+    <label><input type="checkbox" id="labelsToggle"> Vis tangentnavne</label>
+    <label><input type="checkbox" id="rangeToggle"> Udvid til C4–C6</label>
+  </div>
+
+</div>
+
+<footer>Alterna10 · musikundervisning</footer>
+
+<script>
+(function(){
+
+  // Note data for a treble-clef staff.
+  // y is the vertical position on the SVG staff (in the same coordinate
+  // system as the staff lines). ledger:true means it needs a ledger line.
+  const NOTE_DEFS = {
+    'C4':  { y: 100, ledger: true  },
+    'D4':  { y: 95,  ledger: false },
+    'E4':  { y: 90,  ledger: false }, // bottom line
+    'F4':  { y: 85,  ledger: false },
+    'G4':  { y: 80,  ledger: false },
+    'A4':  { y: 75,  ledger: false },
+    'B4':  { y: 70,  ledger: false }, // middle line
+    'C5':  { y: 65,  ledger: false },
+    'D5':  { y: 60,  ledger: false },
+    'E5':  { y: 55,  ledger: false },
+    'F5':  { y: 50,  ledger: false }, // top line
+    'G5':  { y: 45,  ledger: false, ledgerAbove:false },
+    'A5':  { y: 40,  ledger: true  },
+    'B5':  { y: 35,  ledger: true  },
+    'C6':  { y: 30,  ledger: true  }
+  };
+
+  const BASE_RANGE = ['C4','D4','E4','F4','G4','A4','B4','C5'];
+  const EXTENDED_RANGE = ['C4','D4','E4','F4','G4','A4','B4','C5','D5','E5','F5','G5','A5','B5','C6'];
+
+  // Keyboard layout: white keys C4..C6 (2 octaves), black keys where relevant.
+  const WHITE_SEQUENCE = ['C','D','E','F','G','A','B'];
+  const BLACK_AFTER = { 'C':true,'D':true,'F':true,'G':true,'A':true }; // sharp exists after these
+
+  let currentNote = null;
+  let previousNote = null;
+  let correctCount = 0;
+  let attemptCount = 0;
+  let streak = 0;
+  let locked = false;
+
+  const staffEl = document.getElementById('staff');
+  const keyboardEl = document.getElementById('keyboard');
+  const messageEl = document.getElementById('message');
+  const scoreEl = document.getElementById('score');
+  const streakEl = document.getElementById('streak');
+  const labelsToggle = document.getElementById('labelsToggle');
+  const rangeToggle = document.getElementById('rangeToggle');
+  const hintBtn = document.getElementById('hintBtn');
+  const nextBtn = document.getElementById('nextBtn');
+
+  const STAFF_LINE_Y = [50, 60, 70, 80, 90]; // top line F5 .. bottom line E4
+  const STAFF_X_START = 30;
+  const STAFF_X_END = 280;
+  const NOTE_X = 190;
+
+  function buildStaffBase(svg){
+    svg.innerHTML = '';
+    const ns = 'http://www.w3.org/2000/svg';
+
+    // Five staff lines
+    STAFF_LINE_Y.forEach(y => {
+      const line = document.createElementNS(ns, 'line');
+      line.setAttribute('x1', STAFF_X_START);
+      line.setAttribute('x2', STAFF_X_END);
+      line.setAttribute('y1', y);
+      line.setAttribute('y2', y);
+      line.setAttribute('stroke', '#22302B');
+      line.setAttribute('stroke-width', '1.2');
+      svg.appendChild(line);
+    });
+
+    // Treble clef
+    const clef = document.createElementNS(ns, 'text');
+    clef.setAttribute('x', 36);
+    clef.setAttribute('y', 96);
+    clef.setAttribute('font-size', '62');
+    clef.setAttribute('font-family', 'Georgia, serif');
+    clef.setAttribute('fill', '#1B4B43');
+    clef.textContent = '𝄞';
+    svg.appendChild(clef);
+  }
+
+  function drawNote(noteName){
+    const ns = 'http://www.w3.org/2000/svg';
+    const def = NOTE_DEFS[noteName];
+    const y = def.y;
+
+    // Ledger lines (may need more than one for far notes)
+    if (def.ledger){
+      const ledgerYs = [];
+      if (y >= 100){ // below staff (E4 bottom line is 90)
+        for (let ly = 100; ly <= y; ly += 10) ledgerYs.push(ly);
+      } else if (y <= 40){ // above staff (F5 top line is 50)
+        for (let ly = 40; ly >= y; ly -= 10) ledgerYs.push(ly);
+      }
+      ledgerYs.forEach(ly => {
+        const l = document.createElementNS(ns, 'line');
+        l.setAttribute('x1', NOTE_X - 12);
+        l.setAttribute('x2', NOTE_X + 12);
+        l.setAttribute('y1', ly);
+        l.setAttribute('y2', ly);
+        l.setAttribute('stroke', '#22302B');
+        l.setAttribute('stroke-width', '1.2');
+        staffEl.appendChild(l);
+      });
+    }
+
+    // Notehead (slightly rotated ellipse for a hand-set look)
+    const head = document.createElementNS(ns, 'ellipse');
+    head.setAttribute('cx', NOTE_X);
+    head.setAttribute('cy', y);
+    head.setAttribute('rx', 7.5);
+    head.setAttribute('ry', 5.5);
+    head.setAttribute('fill', '#22302B');
+    head.setAttribute('transform', `rotate(-18 ${NOTE_X} ${y})`);
+    staffEl.appendChild(head);
+
+    // Stem: down if note sits on/above the middle line, up otherwise
+    const stem = document.createElementNS(ns, 'line');
+    const stemUp = y >= 70; // B4 (middle line) and below -> stem up
+    if (stemUp){
+      stem.setAttribute('x1', NOTE_X + 6.5);
+      stem.setAttribute('x2', NOTE_X + 6.5);
+      stem.setAttribute('y1', y - 1);
+      stem.setAttribute('y2', y - 32);
+    } else {
+      stem.setAttribute('x1', NOTE_X - 6.5);
+      stem.setAttribute('x2', NOTE_X - 6.5);
+      stem.setAttribute('y1', y + 1);
+      stem.setAttribute('y2', y + 32);
+    }
+    stem.setAttribute('stroke', '#22302B');
+    stem.setAttribute('stroke-width', '1.6');
+    staffEl.appendChild(stem);
+  }
+
+  function renderStaff(noteName){
+    buildStaffBase(staffEl);
+    drawNote(noteName);
+  }
+
+  function buildKeyboard(){
+    keyboardEl.innerHTML = '';
+    const showLabels = labelsToggle.checked;
+    const extended = rangeToggle.checked;
+    const octaves = extended ? ['4','5','6'] : ['4','5'];
+    // Only render up to C6 if extended (stop right after C in the last octave)
+    const whiteKeys = [];
+    octaves.forEach((oct, oi) => {
+      WHITE_SEQUENCE.forEach(letter => {
+        if (oi === octaves.length - 1 && letter !== 'C') return; // stop at final C
+        whiteKeys.push(letter + oct);
+      });
+    });
+
+    const keyWidth = 70;
+    keyboardEl.style.width = (whiteKeys.length * keyWidth) + 'px';
+
+    whiteKeys.forEach((note, i) => {
+      const key = document.createElement('div');
+      key.className = 'key white';
+      key.style.left = (i * keyWidth) + 'px';
+      key.dataset.note = note;
+      if (showLabels) key.textContent = note.replace(/[0-9]/, '');
+      key.addEventListener('click', () => handleKeyPress(note, key));
+      keyboardEl.appendChild(key);
+
+      // Black key after this white key, if applicable and not the last visible key
+      const letter = note[0];
+      const isLastKey = (i === whiteKeys.length - 1);
+      if (BLACK_AFTER[letter] && !isLastKey){
+        const black = document.createElement('div');
+        black.className = 'key black';
+        black.style.left = (i * keyWidth + keyWidth - 21) + 'px';
+        keyboardEl.appendChild(black);
+      }
+    });
+  }
+
+  function currentRange(){
+    return rangeToggle.checked ? EXTENDED_RANGE : BASE_RANGE;
+  }
+
+  function pickNewNote(){
+    const range = currentRange();
+    let candidate;
+    do {
+      candidate = range[Math.floor(Math.random() * range.length)];
+    } while (candidate === previousNote && range.length > 1);
+    previousNote = candidate;
+    currentNote = candidate;
+    renderStaff(currentNote);
+    setMessage('Klik på den tangent, du tror noden er.', 'neutral');
+    locked = false;
+  }
+
+  function setMessage(text, kind){
+    messageEl.textContent = text;
+    messageEl.className = 'message ' + kind;
+  }
+
+  function updateScore(){
+    scoreEl.textContent = correctCount + ' / ' + attemptCount + ' rigtige';
+    streakEl.textContent = streak >= 3 ? ('🔥 ' + streak + ' i træk') : '';
+  }
+
+  function flashKey(note, className, duration){
+    const el = keyboardEl.querySelector('.key[data-note="' + note + '"]');
+    if (!el) return;
+    el.classList.add(className);
+    setTimeout(() => el.classList.remove(className), duration);
+  }
+
+  function handleKeyPress(note, keyEl){
+    if (locked || !currentNote) return;
+    attemptCount++;
+    if (note === currentNote){
+      locked = true;
+      correctCount++;
+      streak++;
+      updateScore();
+      flashKey(note, 'correct-flash', 700);
+      setMessage('Rigtigt! Det var ' + currentNote.replace(/[0-9]/,'') + '.', 'correct');
+      setTimeout(pickNewNote, 800);
+    } else {
+      streak = 0;
+      updateScore();
+      flashKey(note, 'wrong-flash', 500);
+      setMessage('Prøv igen!', 'wrong');
+    }
+  }
+
+  hintBtn.addEventListener('click', () => {
+    if (!currentNote) return;
+    flashKey(currentNote, 'reveal-flash', 1000);
+    setMessage('Svaret er markeret med gult.', 'neutral');
+  });
+
+  nextBtn.addEventListener('click', pickNewNote);
+
+  labelsToggle.addEventListener('change', buildKeyboard);
+  rangeToggle.addEventListener('change', () => {
+    buildKeyboard();
+    pickNewNote();
+  });
+
+  // Init
+  buildKeyboard();
+  updateScore();
+  pickNewNote();
+
+})();
+</script>
+
+</body>
+</html>
